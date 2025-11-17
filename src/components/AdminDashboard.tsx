@@ -112,18 +112,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
 
   // ➕ Ajouter produit
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("nom", formData.nom);
-      formDataToSend.append("prix", formData.prix);
-      formDataToSend.append("stock", formData.stock);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("categorie", formData.categorie);
-      if (imageFile) formDataToSend.append("image", imageFile);
+const handleAddProduct = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("nom", formData.nom);
+    formDataToSend.append("prix", formData.prix);
+    formDataToSend.append("stock", formData.stock);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("categorie", formData.categorie);
+    if (imageFile) formDataToSend.append("image", imageFile);
+    
 
-      const newProdBackend = await addProduitAvecImage(formDataToSend);
+
+    const newProdBackend = await addProduitAvecImage(formDataToSend);
       const newProd = mapBackendToFrontend(newProdBackend);
       setProduits((prev) => [...prev, newProd]);
       toast.success("✅ Produit ajouté avec succès !");
@@ -294,7 +296,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                       <Label htmlFor="add-categorie">Catégorie *</Label>
                       <Select
                         value={formData.categorie}
-                        onValueChange={(value) => setFormData({ ...formData, categorie: value })}
+                        onValueChange={(value : any) => setFormData({ ...formData, categorie: value })}
                         required
                       >
                         <SelectTrigger id="add-categorie">

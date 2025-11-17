@@ -9,37 +9,20 @@ export const fetchProduits = async () => {
 };
 
 // 🔹 Ajouter un produit avec image
-export const addProduitAvecImage = async (produit) => {
-  const formData = new FormData();
-  formData.append("nom", produit.nom);
-  formData.append("categorie", produit.categorie);
-  formData.append("prix", produit.prix);
-  formData.append("stock", produit.stock);
-  formData.append("description", produit.description);
-
-  if (produit.image) {
-    formData.append("image", produit.image);
+export const addProduitAvecImage = async (formData) => {
+  // Debug - verify data
+  console.log("=== API - FormData being sent ===");
+  for (let [key, value] of formData.entries()) {
+    console.log(`${key}:`, value);
   }
-
+  
   const res = await axios.post(`${API_URL}/upload`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;
 };
 
-// 🔹 Modifier un produit avec image
-export const updateProduitAvecImage = async (id, produit) => {
-  const formData = new FormData();
-  formData.append("nom", produit.nom);
-  formData.append("categorie", produit.categorie);
-  formData.append("prix", produit.prix);
-  formData.append("stock", produit.stock);
-  formData.append("description", produit.description);
-
-  if (produit.image) {
-    formData.append("image", produit.image);
-  }
-
+export const updateProduitAvecImage = async (id, formData) => {
   const res = await axios.put(`${API_URL}/${id}/upload`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
