@@ -1,9 +1,11 @@
 package com.example.ecommerce_api.service;
 
 import com.example.ecommerce_api.dao.CommandeRepository;
+import com.example.ecommerce_api.dao.HistoriqueStatutRepository;
 import com.example.ecommerce_api.dao.ProduitRepository;
 import com.example.ecommerce_api.entity.Client;
 import com.example.ecommerce_api.entity.Commande;
+import com.example.ecommerce_api.entity.HistoriqueStatut;
 import com.example.ecommerce_api.entity.LigneCommande;
 import com.example.ecommerce_api.entity.produit;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,9 @@ public class CommandeService {
 
     @Autowired
     private ProduitRepository produitRepository;
+
+    @Autowired
+    private HistoriqueStatutRepository historiqueStatutRepository;
 
     @Autowired
     private EmailService emailService;
@@ -74,5 +79,65 @@ public class CommandeService {
             // Ne pas faire échouer la commande si l'email échoue
             // On log juste l'erreur
         }
+    }
+
+    /**
+     * Met à jour le statut d'une commande et enregistre l'historique
+     */
+    public Commande mettreAJourStatut(Long commandeId, String nouveauStatut, String commentaire, String utilisateur) {
+        Commande commande = getCommandeById(commandeId);
+        String ancienStatut = commande.getStatut();
+
+        // Créer l'entrée d'historique
+        HistoriqueStatut historique = new HistoriqueStatut(commande, ancienStatut, nouveauStatut, commentaire, utilisateur);
+        historiqueStatutRepository.save(historique);
+
+        // Mettre à jour le statut
+        commande.setStatut(nouveauStatut);
+        return commandeRepository.save(commande);
+    }
+
+    /**
+     * Marque une commande comme expédiée avec numéro de suivi
+     */
+    public Commande expedierCommande(Long commandeId, String numeroSuivi, String transporteur, LocalDateTime dateExpedition, String utilisateur) {
+        Commande commande = getCommandeById(commandeId);
+
+        commande.setNumeroSuivi(numeroSuivi);
+        commande.setTransporteur(transporteur);
+        commande.setDateExpedition(dateExpedition);
+
+        // Calculer la date de livraison estimée (exemple: +3 jours)
+        LocalDateTime dateEstimee = dateExpedition.plusDays(3);
+        commande.setDateLivraisonEstimee(dateEstimee);
+
+        // Mettre à jour le statut
+        return mettreAJourStatut(commandeId, "SHIPPED", "Commande expédiée avec numéro de suivi: " + numeroSuivi, utilisateur);
+    }
+
+    /**
+     * Marque une commande comme livrée
+     */
+    public Commande marquerLivree(Long commandeId, LocalDateTime dateLivraison, String utilisateur) {
+        Commande commande = getCommandeById(commandeId);
+
+        commande.setDateLivraisonReelle(dateLivraison);
+
+        return mettreAJourStatut(commandeId, "DELIVERED", "Commande livrée le " + dateLivraison.toLocalDate(), utilisateur);
+    }
+
+    /**
+     * Annule une commande
+     */
+    public Commande annulerCommande(Long commandeId, String raison, String utilisateur) {
+        return mettreAJourStatut(commandeId, "CANCELLED", raison, utilisateur);
+    }
+
+    /**
+     * Récupère l'historique des statuts d'une commande
+     */
+    public List<HistoriqueStatut> getHistoriqueStatut(Long commandeId) {
+        Commande commande = getCommandeById(commandeId);
+        return historiqueStatutRepository.findByCommandeOrderByDateChangementDesc(commande);
     }
 }

@@ -7,3 +7,9 @@ dist/
 # Environnement
 .env
 
+feature-suggestions.md
+order-tracking-plan.md
+
+project-understanding.md
+
+ecommerce-api/src/main/resources/application.properties

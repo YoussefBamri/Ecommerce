@@ -29,6 +29,23 @@ public class Commande {
     @OneToOne(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Paiement paiement;
 
+    // New tracking fields
+    private String numeroSuivi;           // Tracking number
+    private LocalDateTime dateExpedition; // Shipping date
+    private LocalDateTime dateLivraisonEstimee; // Estimated delivery date
+    private LocalDateTime dateLivraisonReelle;  // Actual delivery date
+    private String transporteur;          // Shipping carrier (e.g., "DHL", "UPS")
+    private String notesLivraison;        // Delivery notes
+
+    // Order-specific delivery address
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "adresse_livraison_id")
+    private AdresseLivraison adresseLivraison;
+
+    // Status change history
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HistoriqueStatut> historiqueStatuts = new ArrayList<>();
+
     public Commande() {}
 
     // getters / setters
@@ -57,4 +74,34 @@ public class Commande {
 
     public Paiement getPaiement() { return paiement; }
     public void setPaiement(Paiement paiement) { this.paiement = paiement; }
+
+    // New getters and setters for tracking fields
+    public String getNumeroSuivi() { return numeroSuivi; }
+    public void setNumeroSuivi(String numeroSuivi) { this.numeroSuivi = numeroSuivi; }
+
+    public LocalDateTime getDateExpedition() { return dateExpedition; }
+    public void setDateExpedition(LocalDateTime dateExpedition) { this.dateExpedition = dateExpedition; }
+
+    public LocalDateTime getDateLivraisonEstimee() { return dateLivraisonEstimee; }
+    public void setDateLivraisonEstimee(LocalDateTime dateLivraisonEstimee) { this.dateLivraisonEstimee = dateLivraisonEstimee; }
+
+    public LocalDateTime getDateLivraisonReelle() { return dateLivraisonReelle; }
+    public void setDateLivraisonReelle(LocalDateTime dateLivraisonReelle) { this.dateLivraisonReelle = dateLivraisonReelle; }
+
+    public String getTransporteur() { return transporteur; }
+    public void setTransporteur(String transporteur) { this.transporteur = transporteur; }
+
+    public String getNotesLivraison() { return notesLivraison; }
+    public void setNotesLivraison(String notesLivraison) { this.notesLivraison = notesLivraison; }
+
+    public AdresseLivraison getAdresseLivraison() { return adresseLivraison; }
+    public void setAdresseLivraison(AdresseLivraison adresseLivraison) { this.adresseLivraison = adresseLivraison; }
+
+    public List<HistoriqueStatut> getHistoriqueStatuts() { return historiqueStatuts; }
+    public void setHistoriqueStatuts(List<HistoriqueStatut> historiqueStatuts) {
+        this.historiqueStatuts.clear();
+        if (historiqueStatuts != null) {
+            this.historiqueStatuts.addAll(historiqueStatuts);
+        }
+    }
 }

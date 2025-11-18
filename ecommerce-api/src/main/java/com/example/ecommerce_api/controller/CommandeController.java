@@ -2,11 +2,13 @@ package com.example.ecommerce_api.controller;
 
 import com.example.ecommerce_api.entity.Client;
 import com.example.ecommerce_api.entity.Commande;
+import com.example.ecommerce_api.entity.HistoriqueStatut;
 import com.example.ecommerce_api.entity.LigneCommande;
 import com.example.ecommerce_api.service.ClientService;
 import com.example.ecommerce_api.service.CommandeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -92,13 +94,99 @@ public class CommandeController {
     @PostMapping("/{id}/envoyer-email")
     public Map<String, String> envoyerEmailCommande(@PathVariable Long id) {
         Commande commande = commandeService.getCommandeById(id);
-        
+
         // Appeler le service pour envoyer l'email
         commandeService.envoyerEmailConfirmation(commande);
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("message", "Email de confirmation envoyé avec succès à " + commande.getClient().getEmail());
         response.put("status", "SUCCESS");
         return response;
+    }
+
+    /**
+     * Récupère les informations de suivi d'une commande
+     */
+    @GetMapping("/{id}/tracking")
+    public Map<String, Object> getTrackingInfo(@PathVariable Long id) {
+        Commande commande = commandeService.getCommandeById(id);
+
+        Map<String, Object> tracking = new HashMap<>();
+        tracking.put("commandeId", commande.getId());
+        tracking.put("statut", commande.getStatut());
+        tracking.put("numeroSuivi", commande.getNumeroSuivi());
+        tracking.put("transporteur", commande.getTransporteur());
+        tracking.put("dateExpedition", commande.getDateExpedition());
+        tracking.put("dateLivraisonEstimee", commande.getDateLivraisonEstimee());
+        tracking.put("dateLivraisonReelle", commande.getDateLivraisonReelle());
+        tracking.put("notesLivraison", commande.getNotesLivraison());
+
+        return tracking;
+    }
+
+    /**
+     * Met à jour le statut d'une commande (admin)
+     */
+    @PutMapping("/{id}/status")
+    public Commande updateStatus(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        String nouveauStatut = (String) payload.get("statut");
+        String commentaire = (String) payload.get("commentaire");
+        String utilisateur = (String) payload.get("utilisateur");
+
+        return commandeService.mettreAJourStatut(id, nouveauStatut, commentaire, utilisateur);
+    }
+
+    /**
+     * Marque une commande comme expédiée
+     */
+    @PostMapping("/{id}/ship")
+    public Commande shipOrder(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        String numeroSuivi = (String) payload.get("numeroSuivi");
+        String transporteur = (String) payload.get("transporteur");
+        String utilisateur = (String) payload.get("utilisateur");
+
+        // Date d'expédition par défaut : maintenant
+        LocalDateTime dateExpedition = LocalDateTime.now();
+        if (payload.containsKey("dateExpedition")) {
+            // Si fournie, parser depuis String (ISO format)
+            dateExpedition = LocalDateTime.parse((String) payload.get("dateExpedition"));
+        }
+
+        return commandeService.expedierCommande(id, numeroSuivi, transporteur, dateExpedition, utilisateur);
+    }
+
+    /**
+     * Récupère l'historique des statuts d'une commande
+     */
+    @GetMapping("/{id}/history")
+    public List<HistoriqueStatut> getStatusHistory(@PathVariable Long id) {
+        return commandeService.getHistoriqueStatut(id);
+    }
+
+    /**
+     * Marque une commande comme livrée
+     */
+    @PutMapping("/{id}/deliver")
+    public Commande markAsDelivered(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        String utilisateur = (String) payload.get("utilisateur");
+
+        // Date de livraison par défaut : maintenant
+        LocalDateTime dateLivraison = LocalDateTime.now();
+        if (payload.containsKey("dateLivraison")) {
+            dateLivraison = LocalDateTime.parse((String) payload.get("dateLivraison"));
+        }
+
+        return commandeService.marquerLivree(id, dateLivraison, utilisateur);
+    }
+
+    /**
+     * Annule une commande
+     */
+    @PostMapping("/{id}/cancel")
+    public Commande cancelOrder(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        String raison = (String) payload.get("raison");
+        String utilisateur = (String) payload.get("utilisateur");
+
+        return commandeService.annulerCommande(id, raison, utilisateur);
     }
 }
