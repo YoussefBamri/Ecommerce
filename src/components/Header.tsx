@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Menu, X, Store, Shield } from 'lucide-react';
+import { ShoppingCart, Menu, X, Store, Shield, Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -39,6 +39,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                 onClick={() => onNavigate('home')}
               >
                 Accueil
+              </Button>
+              <Button
+                variant={currentPage === 'order-tracking' ? 'default' : 'ghost'}
+                onClick={() => onNavigate('order-tracking')}
+                className="gap-2"
+              >
+                <Search className="h-4 w-4" />
+                Suivre commande
               </Button>
               <Button
                 variant={currentPage === 'admin' ? 'default' : 'ghost'}
@@ -96,6 +104,17 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                 }}
               >
                 Accueil
+              </Button>
+              <Button
+                variant={currentPage === 'order-tracking' ? 'default' : 'ghost'}
+                className="justify-start gap-2"
+                onClick={() => {
+                  onNavigate('order-tracking');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <Search className="h-4 w-4" />
+                Suivre commande
               </Button>
               <Button
                 variant={currentPage === 'admin' ? 'default' : 'ghost'}

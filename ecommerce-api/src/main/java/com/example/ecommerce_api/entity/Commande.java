@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "commandes")
@@ -18,8 +20,9 @@ public class Commande {
     private Double total;
     private String statut; // EN_ATTENTE, PAYEE, LIVREE, ...
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
+    @JsonIgnore
     private Client client;
 
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -27,23 +30,41 @@ public class Commande {
     private List<LigneCommande> lignesCommande = new ArrayList<>();
 
     @OneToOne(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
     private Paiement paiement;
 
     // New tracking fields
+    @Column(nullable = true)
     private String numeroSuivi;           // Tracking number
+
+    @Column(nullable = true)
     private LocalDateTime dateExpedition; // Shipping date
+
+    @Column(nullable = true)
     private LocalDateTime dateLivraisonEstimee; // Estimated delivery date
+
+    @Column(nullable = true)
     private LocalDateTime dateLivraisonReelle;  // Actual delivery date
+
+    @Column(nullable = true)
     private String transporteur;          // Shipping carrier (e.g., "DHL", "UPS")
+
+    @Column(nullable = true)
     private String notesLivraison;        // Delivery notes
 
-    // Order-specific delivery address
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "adresse_livraison_id")
-    private AdresseLivraison adresseLivraison;
+    // Order-specific delivery address (embedded to avoid relationship conflicts)
+    @Column(nullable = true)
+    private String rueLivraison;
+    @Column(nullable = true)
+    private String villeLivraison;
+    @Column(nullable = true)
+    private String codePostalLivraison;
+    @Column(nullable = true)
+    private String paysLivraison;
 
     // Status change history
-    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<HistoriqueStatut> historiqueStatuts = new ArrayList<>();
 
     public Commande() {}
@@ -94,8 +115,17 @@ public class Commande {
     public String getNotesLivraison() { return notesLivraison; }
     public void setNotesLivraison(String notesLivraison) { this.notesLivraison = notesLivraison; }
 
-    public AdresseLivraison getAdresseLivraison() { return adresseLivraison; }
-    public void setAdresseLivraison(AdresseLivraison adresseLivraison) { this.adresseLivraison = adresseLivraison; }
+    public String getRueLivraison() { return rueLivraison; }
+    public void setRueLivraison(String rueLivraison) { this.rueLivraison = rueLivraison; }
+
+    public String getVilleLivraison() { return villeLivraison; }
+    public void setVilleLivraison(String villeLivraison) { this.villeLivraison = villeLivraison; }
+
+    public String getCodePostalLivraison() { return codePostalLivraison; }
+    public void setCodePostalLivraison(String codePostalLivraison) { this.codePostalLivraison = codePostalLivraison; }
+
+    public String getPaysLivraison() { return paysLivraison; }
+    public void setPaysLivraison(String paysLivraison) { this.paysLivraison = paysLivraison; }
 
     public List<HistoriqueStatut> getHistoriqueStatuts() { return historiqueStatuts; }
     public void setHistoriqueStatuts(List<HistoriqueStatut> historiqueStatuts) {

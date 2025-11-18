@@ -2,6 +2,7 @@ package com.example.ecommerce_api.entity;
 
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "lignes_commande")
@@ -16,11 +17,13 @@ public class LigneCommande {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produit_id")
+    @JsonIgnore
     private produit produit;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "commande_id")
     @JsonBackReference
+    @JsonIgnore
     private Commande commande;
 
     public LigneCommande() {}

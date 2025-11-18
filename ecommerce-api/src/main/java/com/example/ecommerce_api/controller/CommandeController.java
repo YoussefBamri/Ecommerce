@@ -10,11 +10,65 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/commandes")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:5173"})
 public class CommandeController {
+
+    // DTO for order list (without lazy relationships)
+    public static class OrderDTO {
+        public Long id;
+        public LocalDateTime dateCommande;
+        public Double total;
+        public String statut;
+        public String numeroSuivi;
+        public LocalDateTime dateExpedition;
+        public LocalDateTime dateLivraisonEstimee;
+        public LocalDateTime dateLivraisonReelle;
+        public String transporteur;
+        public String notesLivraison;
+        public String rueLivraison;
+        public String villeLivraison;
+        public String codePostalLivraison;
+        public String paysLivraison;
+        public ClientInfo client;
+
+        public OrderDTO(Commande commande) {
+            this.id = commande.getId();
+            this.dateCommande = commande.getDateCommande();
+            this.total = commande.getTotal();
+            this.statut = commande.getStatut();
+            this.numeroSuivi = commande.getNumeroSuivi();
+            this.dateExpedition = commande.getDateExpedition();
+            this.dateLivraisonEstimee = commande.getDateLivraisonEstimee();
+            this.dateLivraisonReelle = commande.getDateLivraisonReelle();
+            this.transporteur = commande.getTransporteur();
+            this.notesLivraison = commande.getNotesLivraison();
+            this.rueLivraison = commande.getRueLivraison();
+            this.villeLivraison = commande.getVilleLivraison();
+            this.codePostalLivraison = commande.getCodePostalLivraison();
+            this.paysLivraison = commande.getPaysLivraison();
+
+            // Include basic client info
+            if (commande.getClient() != null) {
+                this.client = new ClientInfo(commande.getClient());
+            }
+        }
+    }
+
+    public static class ClientInfo {
+        public Long id;
+        public String nom;
+        public String email;
+
+        public ClientInfo(Client client) {
+            this.id = client.getId();
+            this.nom = client.getNom();
+            this.email = client.getEmail();
+        }
+    }
 
     @Autowired
     private CommandeService commandeService;
@@ -83,8 +137,11 @@ public class CommandeController {
     }
 
     @GetMapping
-    public List<Commande> getAll() {
-        return commandeService.getAllCommandes();
+    public List<OrderDTO> getAll() {
+        List<Commande> commandes = commandeService.getAllCommandes();
+        return commandes.stream()
+                .map(OrderDTO::new)
+                .collect(Collectors.toList());
     }
 
     /**

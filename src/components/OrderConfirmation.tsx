@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Mail, Package, Home } from 'lucide-react';
+import { CheckCircle, Mail, Package, Home, Truck } from 'lucide-react';
 import { Client } from '../types';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -9,12 +9,14 @@ interface OrderConfirmationProps {
   client: Client;
   orderId: number;
   onReturnHome: () => void;
+  onViewTracking: () => void;
 }
 
 export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
   client,
   orderId,
   onReturnHome,
+  onViewTracking,
 }) => {
   const estimatedDelivery = new Date();
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 3);
@@ -145,7 +147,11 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="flex-1" onClick={onReturnHome}>
+            <Button size="lg" className="flex-1" onClick={onViewTracking}>
+              <Truck className="h-4 w-4 mr-2" />
+              Suivre ma commande
+            </Button>
+            <Button size="lg" variant="outline" className="flex-1" onClick={onReturnHome}>
               <Home className="h-4 w-4 mr-2" />
               Retour à l'accueil
             </Button>

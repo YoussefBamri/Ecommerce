@@ -15,10 +15,19 @@ public class HistoriqueStatut {
     @JoinColumn(name = "commande_id", nullable = false)
     private Commande commande;
 
+    @Column(nullable = true)
     private String ancienStatut;
+
+    @Column(nullable = false)
     private String nouveauStatut;
+
+    @Column(nullable = false)
     private LocalDateTime dateChangement;
+
+    @Column(nullable = true)
     private String commentaire; // Optional note about the change
+
+    @Column(nullable = true)
     private String utilisateur; // Who made the change (admin/customer)
 
     public HistoriqueStatut() {}

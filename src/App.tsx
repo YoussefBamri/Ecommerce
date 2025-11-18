@@ -8,6 +8,7 @@ import { ProductDetail } from './components/ProductDetail';
 import { Cart } from './components/Cart';
 import { Checkout } from './components/Checkout';
 import { OrderConfirmation } from './components/OrderConfirmation';
+import { OrderTracking } from './components/OrderTracking';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Client, Produit } from './types';
@@ -16,7 +17,7 @@ import { fetchProduits, getProduitById } from './api/api';
 import { Button } from './components/ui/button';
 import { mapBackendToFrontend } from './utils/productMapper';
 
-type Page = 'home' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'admin';
+type Page = 'home' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'order-tracking' | 'admin';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -24,6 +25,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [orderData, setOrderData] = useState<{ client: Client; orderId: number } | null>(null);
+  const [trackingOrderId, setTrackingOrderId] = useState<number | null>(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [products, setProducts] = useState<Produit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,6 +151,9 @@ export default function App() {
       loadProducts(false, true);
     } else if (page === 'cart') {
       setCurrentPage('cart');
+    } else if (page === 'order-tracking') {
+      setCurrentPage('order-tracking');
+      setTrackingOrderId(null); // Reset for new tracking session
     } else if (page === 'admin') {
       setCurrentPage('admin');
     }
@@ -214,6 +219,12 @@ export default function App() {
   const handleOrderComplete = (client: Client, orderId: number) => {
     setOrderData({ client, orderId });
     setCurrentPage('order-confirmation');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewOrderTracking = (orderId: number) => {
+    setTrackingOrderId(orderId);
+    setCurrentPage('order-tracking');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -313,6 +324,15 @@ export default function App() {
             client={orderData.client}
             orderId={orderData.orderId}
             onReturnHome={handleBackToHome}
+            onViewTracking={() => handleViewOrderTracking(orderData.orderId)}
+          />
+        )}
+
+        {currentPage === 'order-tracking' && (
+          <OrderTracking
+            orderId={trackingOrderId}
+            onOrderFound={(orderId) => setTrackingOrderId(orderId)}
+            onBack={handleBackToHome}
           />
         )}
 

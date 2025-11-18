@@ -10,6 +10,7 @@ import com.example.ecommerce_api.entity.LigneCommande;
 import com.example.ecommerce_api.entity.produit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class CommandeService {
     /**
      * Crée une commande : lie les lignes et persiste en cascade
      */
+    @Transactional
     public Commande creerCommande(Commande commande, Long clientId) {
         // la commande doit contenir client (ou le controller attachera le client)
         commande.setDateCommande(LocalDateTime.now());
@@ -61,6 +63,7 @@ public class CommandeService {
         return commandeRepository.save(commande);
     }
 
+    @Transactional(readOnly = true)
     public List<Commande> getAllCommandes() {
         return commandeRepository.findAll();
     }
@@ -84,6 +87,7 @@ public class CommandeService {
     /**
      * Met à jour le statut d'une commande et enregistre l'historique
      */
+    @Transactional
     public Commande mettreAJourStatut(Long commandeId, String nouveauStatut, String commentaire, String utilisateur) {
         Commande commande = getCommandeById(commandeId);
         String ancienStatut = commande.getStatut();
@@ -94,12 +98,34 @@ public class CommandeService {
 
         // Mettre à jour le statut
         commande.setStatut(nouveauStatut);
-        return commandeRepository.save(commande);
+        Commande commandeSauvegardee = commandeRepository.save(commande);
+
+        // Envoyer une notification par email pour les changements de statut importants
+        envoyerNotificationStatutSiNecessaire(commandeSauvegardee, ancienStatut, nouveauStatut);
+
+        return commandeSauvegardee;
+    }
+
+    /**
+     * Détermine si une notification email doit être envoyée pour ce changement de statut
+     */
+    private void envoyerNotificationStatutSiNecessaire(Commande commande, String ancienStatut, String nouveauStatut) {
+        // Liste des statuts qui déclenchent une notification
+        String[] statutsNotifiables = {"CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"};
+
+        // Vérifier si le nouveau statut nécessite une notification
+        for (String statut : statutsNotifiables) {
+            if (statut.equals(nouveauStatut)) {
+                emailService.envoyerNotificationStatut(commande, ancienStatut, nouveauStatut);
+                break;
+            }
+        }
     }
 
     /**
      * Marque une commande comme expédiée avec numéro de suivi
      */
+    @Transactional
     public Commande expedierCommande(Long commandeId, String numeroSuivi, String transporteur, LocalDateTime dateExpedition, String utilisateur) {
         Commande commande = getCommandeById(commandeId);
 
@@ -118,6 +144,7 @@ public class CommandeService {
     /**
      * Marque une commande comme livrée
      */
+    @Transactional
     public Commande marquerLivree(Long commandeId, LocalDateTime dateLivraison, String utilisateur) {
         Commande commande = getCommandeById(commandeId);
 
@@ -129,6 +156,7 @@ public class CommandeService {
     /**
      * Annule une commande
      */
+    @Transactional
     public Commande annulerCommande(Long commandeId, String raison, String utilisateur) {
         return mettreAJourStatut(commandeId, "CANCELLED", raison, utilisateur);
     }
@@ -136,6 +164,7 @@ public class CommandeService {
     /**
      * Récupère l'historique des statuts d'une commande
      */
+    @Transactional(readOnly = true)
     public List<HistoriqueStatut> getHistoriqueStatut(Long commandeId) {
         Commande commande = getCommandeById(commandeId);
         return historiqueStatutRepository.findByCommandeOrderByDateChangementDesc(commande);
