@@ -3,6 +3,7 @@ package com.example.ecommerce_api.service;
 import com.example.ecommerce_api.dao.CommandeRepository;
 import com.example.ecommerce_api.dao.HistoriqueStatutRepository;
 import com.example.ecommerce_api.dao.ProduitRepository;
+import com.example.ecommerce_api.entity.AdresseLivraison;
 import com.example.ecommerce_api.entity.Client;
 import com.example.ecommerce_api.entity.Commande;
 import com.example.ecommerce_api.entity.HistoriqueStatut;
@@ -37,6 +38,18 @@ public class CommandeService {
         // la commande doit contenir client (ou le controller attachera le client)
         commande.setDateCommande(LocalDateTime.now());
         commande.setStatut("EN_ATTENTE");
+
+        // Copier l'adresse de livraison du client vers la commande
+        if (commande.getClient() != null && commande.getClient().getAdresseLivraison() != null) {
+            AdresseLivraison adresse = commande.getClient().getAdresseLivraison();
+            commande.setRueLivraison(adresse.getRue());
+            commande.setVilleLivraison(adresse.getVille());
+            commande.setCodePostalLivraison(adresse.getCodePostal());
+            commande.setPaysLivraison(adresse.getPays());
+
+            // Définir une date de livraison estimée par défaut (3 jours)
+            commande.setDateLivraisonEstimee(LocalDateTime.now().plusDays(3));
+        }
 
         // lier les lignes -> set commande sur chaque ligne et vérifier produit
         if (commande.getLignesCommande() != null) {

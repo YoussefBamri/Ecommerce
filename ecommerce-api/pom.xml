@@ -71,6 +71,13 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Stripe Payment Processing -->
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>22.16.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

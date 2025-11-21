@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
+import { StripeProvider } from './context/StripeContext';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ProductGrid } from './components/ProductGrid';
@@ -8,6 +9,7 @@ import { ProductDetail } from './components/ProductDetail';
 import { Cart } from './components/Cart';
 import { Checkout } from './components/Checkout';
 import { OrderConfirmation } from './components/OrderConfirmation';
+import { PaymentSuccess } from './components/PaymentSuccess';
 import { OrderTracking } from './components/OrderTracking';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -17,7 +19,7 @@ import { fetchProduits, getProduitById } from './api/api';
 import { Button } from './components/ui/button';
 import { mapBackendToFrontend } from './utils/productMapper';
 
-type Page = 'home' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'order-tracking' | 'admin-login' | 'admin-dashboard';
+type Page = 'home' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'payment-success' | 'order-tracking' | 'admin-login' | 'admin-dashboard';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -115,6 +117,16 @@ export default function App() {
   useEffect(() => {
     // Charger directement depuis le backend au démarrage
     loadProducts(true, false);
+  }, []);
+
+  // Handle URL-based routing for payment success
+  useEffect(() => {
+    const path = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+
+    if (path === '/payment-success' && urlParams.get('session_id')) {
+      setCurrentPage('payment-success');
+    }
   }, []);
 
 
@@ -242,8 +254,9 @@ export default function App() {
   };
 
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-gray-50">
+    <StripeProvider>
+      <CartProvider>
+        <div className="min-h-screen bg-gray-50">
         {currentPage !== 'admin-login' && currentPage !== 'admin-dashboard' && (
           <Header
             onNavigate={handleNavigate}
@@ -341,6 +354,13 @@ export default function App() {
           />
         )}
 
+        {currentPage === 'payment-success' && (
+          <PaymentSuccess
+            onReturnHome={handleBackToHome}
+            onViewOrderTracking={handleViewOrderTracking}
+          />
+        )}
+
         {currentPage === 'order-tracking' && (
           <OrderTracking
             orderId={trackingOrderId}
@@ -412,7 +432,8 @@ export default function App() {
         )}
 
         <Toaster position="top-right" richColors />
-      </div>
-    </CartProvider>
+        </div>
+      </CartProvider>
+    </StripeProvider>
   );
 }

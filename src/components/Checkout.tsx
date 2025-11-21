@@ -8,7 +8,7 @@ import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Client } from '../types';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { createClient, createPaiement, createCommande, envoyerEmailCommande } from '../api/orderApi';
 
 interface CheckoutProps {
@@ -27,12 +27,7 @@ export const Checkout: React.FC<CheckoutProps> = ({ onBack, onOrderComplete }) =
     telephone: '',
   });
 
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: '',
-  });
+  // Payment info is now handled by Stripe Elements
 
   const [shippingAddress, setShippingAddress] = useState({
     address: '',
@@ -64,16 +59,9 @@ export const Checkout: React.FC<CheckoutProps> = ({ onBack, onOrderComplete }) =
     setStep(3);
   };
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!paymentInfo.cardNumber || !paymentInfo.cardName || !paymentInfo.expiryDate || !paymentInfo.cvv) {
-      toast.error('Veuillez remplir tous les champs de paiement');
-      return;
-    }
-
+  const handleStripeCheckout = async () => {
     setIsProcessing(true);
-    
+
     try {
       // 1. Créer le client (inclure l'adresse de livraison)
       const clientData = {
@@ -88,69 +76,60 @@ export const Checkout: React.FC<CheckoutProps> = ({ onBack, onOrderComplete }) =
           pays: shippingAddress.country,
         },
       };
-      
+
       const createdClient = await createClient(clientData);
       console.log('✅ Client créé:', createdClient);
-      
-      // 2. Créer la commande AVANT le paiement (le paiement nécessite commandeId)
+
+      // 2. Créer la commande
       const lignesCommande = cartItems.map((item) => ({
         quantite: item.quantite,
-        prixUnitaire: item.produit.prix, // Le backend attend prixUnitaire, pas prixTotal
+        prixUnitaire: item.produit.prix,
         produit: {
-          id: item.produit.idProd, // Le backend attend 'id'
+          id: item.produit.idProd,
         },
       }));
-      
+
       const commandeData = {
-        clientId: createdClient.id, // Le backend attend clientId directement
+        clientId: createdClient.id,
         total: total,
-        lignesCommande: lignesCommande, // Le backend attend lignesCommande (pas lignes)
+        lignesCommande: lignesCommande,
       };
-      
+
       const createdCommande = await createCommande(commandeData);
       console.log('✅ Commande créée:', createdCommande);
-      
-      // 3. Créer le paiement avec le commandeId
-      const paiementData = {
-        montant: total,
-        commandeId: createdCommande.id || createdCommande.idCommande, // Le backend attend commandeId
-        modePaiement: 'CARTE_BANCAIRE', // Le backend attend modePaiement (pas methode)
-        numeroCarte: paymentInfo.cardNumber.replace(/\s/g, ''), // Optionnel, pour affichage
-        nomCarte: paymentInfo.cardName, // Optionnel, pour affichage
-        dateExpiration: paymentInfo.expiryDate, // Optionnel, pour affichage
-        cvv: paymentInfo.cvv, // Optionnel, pour affichage
+
+      // 3. Créer une session Stripe Checkout
+      const checkoutData = {
+        commandeId: createdCommande.id || createdCommande.idCommande,
+        amount: total,
+        currency: 'usd', // Stripe supports USD, EUR, etc. but not TND directly
+        successUrl: `http://localhost:3000/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `http://localhost:3000/checkout`,
       };
-      
-      const createdPaiement = await createPaiement(paiementData);
-      console.log('✅ Paiement créé:', createdPaiement);
-      
-      // 4. Envoyer l'email de confirmation au client
-      const orderId = createdCommande.id || createdCommande.idCommande || Math.floor(Math.random() * 100000) + 1000;
-      
-      try {
-        await envoyerEmailCommande(orderId);
-        console.log('✅ Email de confirmation envoyé au client');
-      } catch (emailError) {
-        // Ne pas faire échouer la commande si l'email échoue
-        console.warn('⚠️ Erreur lors de l\'envoi de l\'email (commande confirmée):', emailError);
+
+      // Créer la session de paiement via le backend
+      const response = await fetch('http://localhost:8081/api/paiements/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checkoutData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création de la session de paiement');
       }
-      
-      // 5. Vider le panier et compléter la commande
-      clearCart();
-      
-      onOrderComplete(createdClient, orderId);
-      
-      toast.success('Commande confirmée avec succès !', {
-        description: `Numéro de commande: ${orderId}. Un email de confirmation a été envoyé.`,
+
+      const session = await response.json();
+
+      // Rediriger vers Stripe Checkout
+      window.location.href = session.url;
+
+    } catch (error: any) {
+      console.error('❌ Erreur lors de l\'initialisation du paiement:', error);
+      toast.error('Erreur lors de l\'initialisation du paiement', {
+        description: error?.message || 'Veuillez réessayer',
       });
-      
-    } catch (error) {
-      console.error('❌ Erreur lors du traitement de la commande:', error);
-      console.error('Détails:', error.response?.data);
-      toast.error('Erreur lors du traitement de la commande', {
-        description: error.response?.data?.message || error.message || 'Veuillez réessayer',
-      });
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -318,71 +297,47 @@ export const Checkout: React.FC<CheckoutProps> = ({ onBack, onOrderComplete }) =
 
               {/* Step 3: Payment */}
               {step === 3 && (
-                <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Lock className="h-5 w-5 text-green-600" />
-                    <h2 className="text-xl">Paiement sécurisé</h2>
+                    <h2 className="text-xl">Paiement sécurisé avec Stripe</h2>
                   </div>
 
-                  <div>
-                    <Label htmlFor="cardNumber">Numéro de carte *</Label>
-                    <Input
-                      id="cardNumber"
-                      type="text"
-                      value={paymentInfo.cardNumber}
-                      onChange={(e) => setPaymentInfo({ ...paymentInfo, cardNumber: e.target.value })}
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19}
-                      required
-                    />
-                  </div>
+                  <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                    <div className="text-center space-y-4">
+                      <div className="flex justify-center">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                          <CreditCard className="h-8 w-8 text-blue-600" />
+                        </div>
+                      </div>
 
-                  <div>
-                    <Label htmlFor="cardName">Nom sur la carte *</Label>
-                    <Input
-                      id="cardName"
-                      type="text"
-                      value={paymentInfo.cardName}
-                      onChange={(e) => setPaymentInfo({ ...paymentInfo, cardName: e.target.value })}
-                      placeholder="stb carte"
-                      required
-                    />
-                  </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          Paiement Stripe Sécurisé
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          Vous serez redirigé vers une page de paiement Stripe sécurisée pour compléter votre achat.
+                        </p>
+                      </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="expiryDate">Date d'expiration *</Label>
-                      <Input
-                        id="expiryDate"
-                        type="text"
-                        value={paymentInfo.expiryDate}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, expiryDate: e.target.value })}
-                        placeholder="MM/AA"
-                        maxLength={5}
-                        required
-                      />
+                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                        <div className="text-2xl font-bold text-blue-600 mb-1">
+                          {total.toFixed(2)} TND
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Montant total de la commande
+                        </div>
+                      </div>
                     </div>
+                  </Card>
 
-                    <div>
-                      <Label htmlFor="cvv">CVV *</Label>
-                      <Input
-                        id="cvv"
-                        type="text"
-                        value={paymentInfo.cvv}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, cvv: e.target.value })}
-                        placeholder="123"
-                        maxLength={3}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Card className="p-4 bg-blue-50 border-blue-200">
+                  <Card className="p-4 bg-green-50 border-green-200">
                     <div className="flex items-start gap-2">
-                      <Lock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-blue-900">
-                        Vos informations de paiement sont cryptées et sécurisées. Nous ne stockons pas vos données bancaires.
-                      </p>
+                      <Lock className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-green-900">
+                        <p className="font-medium mb-1">Paiement 100% sécurisé</p>
+                        <p>Stripe protège vos informations bancaires et respecte les normes PCI DSS.</p>
+                      </div>
                     </div>
                   </Card>
 
@@ -391,22 +346,22 @@ export const Checkout: React.FC<CheckoutProps> = ({ onBack, onOrderComplete }) =
                       Retour
                     </Button>
                     <Button
-                      type="submit"
-                      className="flex-1 gap-2"
+                      onClick={handleStripeCheckout}
+                      className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700"
                       size="lg"
                       disabled={isProcessing}
                     >
                       {isProcessing ? (
-                        'Traitement en cours...'
+                        'Redirection en cours...'
                       ) : (
                         <>
                           <CreditCard className="h-4 w-4" />
-                          Payer {total.toFixed(2)} TND
+                          Payer avec Stripe
                         </>
                       )}
                     </Button>
                   </div>
-                </form>
+                </div>
               )}
             </Card>
           </div>

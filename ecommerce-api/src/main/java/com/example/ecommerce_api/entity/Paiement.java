@@ -16,6 +16,7 @@ public class Paiement {
     private Double montant;
     private String modePaiement;   // ex: "CARTE_BANCAIRE"
     private LocalDateTime datePaiement;
+    private String referencePaiement; // Stripe payment intent ID
 
     @OneToOne
     @JoinColumn(name = "commande_id", unique = true)
@@ -42,4 +43,7 @@ public class Paiement {
 
     public Commande getCommande() { return commande; }
     public void setCommande(Commande commande) { this.commande = commande; }
+
+    public String getReferencePaiement() { return referencePaiement; }
+    public void setReferencePaiement(String referencePaiement) { this.referencePaiement = referencePaiement; }
 }

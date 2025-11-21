@@ -1,5 +1,5 @@
-import React from 'react';
-import { CheckCircle, Mail, Package, Home, Truck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { CheckCircle, Mail, Package, Home, Truck, Loader2 } from 'lucide-react';
 import { Client } from '../types';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -18,8 +18,85 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
   onReturnHome,
   onViewTracking,
 }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+
   const estimatedDelivery = new Date();
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 3);
+
+  // Handle Stripe Checkout success
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+
+    console.log('OrderConfirmation: sessionId from URL:', sessionId);
+
+    if (sessionId) {
+      // This is a redirect from Stripe Checkout
+      console.log('OrderConfirmation: Handling Stripe checkout success for session:', sessionId);
+      setIsLoading(true);
+      handleStripeCheckoutSuccess(sessionId);
+    } else {
+      // Direct navigation (payment already processed)
+      console.log('OrderConfirmation: No session_id, assuming direct navigation');
+      setPaymentVerified(true);
+    }
+  }, []);
+
+  const handleStripeCheckoutSuccess = async (sessionId: string) => {
+    try {
+      console.log('OrderConfirmation: Calling checkout-success endpoint for session:', sessionId);
+      const response = await fetch(`http://localhost:8081/api/paiements/checkout-success?session_id=${sessionId}`);
+      console.log('OrderConfirmation: Response status:', response.status);
+
+      const data = await response.json();
+      console.log('OrderConfirmation: Response data:', data);
+
+      if (data.success) {
+        console.log('OrderConfirmation: Payment verification successful');
+        setPaymentVerified(true);
+        // Update the orderId from the response if needed
+        if (data.orderId && data.orderId !== orderId) {
+          // You might want to update the parent component with the correct orderId
+          console.log('Order ID from Stripe:', data.orderId);
+        }
+      } else {
+        console.error('OrderConfirmation: Payment verification failed:', data.error);
+        // Handle verification failure
+      }
+    } catch (error) {
+      console.error('OrderConfirmation: Error verifying payment:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <h2 className="text-xl mb-2">Vérification du paiement...</h2>
+          <p className="text-gray-600">Veuillez patienter pendant que nous confirmons votre paiement Stripe.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!paymentVerified) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-600 text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl mb-2">Paiement non vérifié</h2>
+          <p className="text-gray-600 mb-4">Nous n'avons pas pu vérifier votre paiement. Veuillez contacter le support.</p>
+          <Button onClick={onReturnHome}>Retour à l'accueil</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12">
@@ -32,7 +109,7 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
             </div>
             <h1 className="text-3xl mb-2">Commande confirmée !</h1>
             <p className="text-gray-600">
-              Merci pour votre achat. Votre commande a été traitée avec succès.
+              Merci pour votre achat. Votre paiement Stripe a été traité avec succès.
             </p>
           </div>
 
