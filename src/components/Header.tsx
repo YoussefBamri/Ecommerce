@@ -49,8 +49,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                 Suivre commande
               </Button>
               <Button
-                variant={currentPage === 'admin' ? 'default' : 'ghost'}
-                onClick={() => onNavigate('admin')}
+                variant={(currentPage === 'admin-login' || currentPage === 'admin-dashboard') ? 'default' : 'ghost'}
+                onClick={() => onNavigate('admin-dashboard')}
                 className="gap-2"
               >
                 <Shield className="h-4 w-4" />
@@ -117,10 +117,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                 Suivre commande
               </Button>
               <Button
-                variant={currentPage === 'admin' ? 'default' : 'ghost'}
+                variant={(currentPage === 'admin-login' || currentPage === 'admin-dashboard') ? 'default' : 'ghost'}
                 className="justify-start gap-2"
                 onClick={() => {
-                  onNavigate('admin');
+                  onNavigate('admin-dashboard');
                   setMobileMenuOpen(false);
                 }}
               >

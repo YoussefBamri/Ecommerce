@@ -17,7 +17,7 @@ import { fetchProduits, getProduitById } from './api/api';
 import { Button } from './components/ui/button';
 import { mapBackendToFrontend } from './utils/productMapper';
 
-type Page = 'home' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'order-tracking' | 'admin';
+type Page = 'home' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'order-tracking' | 'admin-login' | 'admin-dashboard';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -154,18 +154,27 @@ export default function App() {
     } else if (page === 'order-tracking') {
       setCurrentPage('order-tracking');
       setTrackingOrderId(null); // Reset for new tracking session
-    } else if (page === 'admin') {
-      setCurrentPage('admin');
+    } else if (page === 'admin-login') {
+      setCurrentPage('admin-login');
+    } else if (page === 'admin-dashboard') {
+      // Check if authenticated before allowing access
+      const adminAuth = localStorage.getItem('adminAuth');
+      if (adminAuth === 'true') {
+        setCurrentPage('admin-dashboard');
+      } else {
+        setCurrentPage('admin-login');
+      }
     }
   };
 
   const handleAdminLogin = () => {
     setIsAdminAuthenticated(true);
+    setCurrentPage('admin-dashboard');
   };
 
   const handleAdminLogout = () => {
     setIsAdminAuthenticated(false);
-    setCurrentPage('home');
+    setCurrentPage('admin-login');
       // Recharger les produits après la déconnexion admin pour refléter les changements
       // Mais ne pas afficher de loading pour éviter de faire disparaître les produits
       loadProducts(false, true);
@@ -235,11 +244,13 @@ export default function App() {
   return (
     <CartProvider>
       <div className="min-h-screen bg-gray-50">
-        <Header
-          onNavigate={handleNavigate}
-          onSearch={handleSearch}
-          currentPage={currentPage}
-        />
+        {currentPage !== 'admin-login' && currentPage !== 'admin-dashboard' && (
+          <Header
+            onNavigate={handleNavigate}
+            onSearch={handleSearch}
+            currentPage={currentPage}
+          />
+        )}
 
         {currentPage === 'home' && (
           <>
@@ -336,19 +347,17 @@ export default function App() {
           />
         )}
 
-        {currentPage === 'admin' && (
-          <>
-            {isAdminAuthenticated ? (
-              <AdminDashboard
-                onLogout={handleAdminLogout}
-              />
-            ) : (
-              <AdminLogin onLoginSuccess={handleAdminLogin} />
-            )}
-          </>
+        {currentPage === 'admin-login' && (
+          <AdminLogin onLoginSuccess={handleAdminLogin} />
         )}
 
-        {currentPage !== 'admin' && (
+        {currentPage === 'admin-dashboard' && (
+          <AdminDashboard
+            onLogout={handleAdminLogout}
+          />
+        )}
+
+        {currentPage !== 'admin-login' && currentPage !== 'admin-dashboard' && (
           <footer className="bg-gray-900 text-white mt-auto">
           <div className="container mx-auto px-4 py-12">
             <div className="grid md:grid-cols-4 gap-8">
@@ -384,7 +393,7 @@ export default function App() {
                   <li><a href="#" className="hover:text-white transition-colors">Confidentialité</a></li>
                   <li>
                     <button
-                      onClick={() => handleNavigate('admin')}
+                      onClick={() => handleNavigate('admin-login')}
                       className="hover:text-white transition-colors text-left"
                     >
                       Espace Admin
