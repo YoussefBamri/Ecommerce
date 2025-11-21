@@ -249,6 +249,8 @@ export default function App() {
             onNavigate={handleNavigate}
             onSearch={handleSearch}
             currentPage={currentPage}
+            onViewDetails={handleViewProductDetail}
+            onCheckout={handleCheckout}
           />
         )}
 

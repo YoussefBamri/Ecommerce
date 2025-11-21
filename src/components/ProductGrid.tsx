@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Produit } from '../types';
 import { ProductCard } from './ProductCard';
 import { Button } from './ui/button';
@@ -57,12 +58,19 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((produit) => (
-            <ProductCard
+          {filteredProducts.map((produit, index) => (
+            <motion.div
               key={produit.idProd}
-              produit={produit}
-              onViewDetails={onViewDetails}
-            />
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <ProductCard
+                produit={produit}
+                onViewDetails={onViewDetails}
+              />
+            </motion.div>
           ))}
         </div>
       )}
