@@ -3,6 +3,11 @@ import { CartProvider } from './context/CartContext';
 import { StripeProvider } from './context/StripeContext';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
+import { Promotions } from './components/Promotions';
+import { TrustBadges } from './components/TrustBadges';
+import { Testimonials } from './components/Testimonials';
+import { Benefits } from './components/Benefits';
+import { TestimonialForm } from './components/TestimonialForm';
 import { ProductGrid } from './components/ProductGrid';
 import { CategoryNav } from './components/CategoryNav';
 import { ProductDetail } from './components/ProductDetail';
@@ -13,13 +18,14 @@ import { PaymentSuccess } from './components/PaymentSuccess';
 import { OrderTracking } from './components/OrderTracking';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
+import Shop from './components/Shop';
 import { Client, Produit } from './types';
 import { Toaster } from './components/ui/sonner';
 import { fetchProduits, getProduitById } from './api/api';
 import { Button } from './components/ui/button';
 import { mapBackendToFrontend } from './utils/productMapper';
 
-type Page = 'home' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'payment-success' | 'order-tracking' | 'admin-login' | 'admin-dashboard';
+type Page = 'home' | 'shop' | 'product-detail' | 'cart' | 'checkout' | 'order-confirmation' | 'payment-success' | 'order-tracking' | 'admin-login' | 'admin-dashboard';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -161,6 +167,8 @@ export default function App() {
       // Recharger les produits en arrière-plan (sans écran de chargement)
       // pour éviter de faire disparaître les produits (preserveExisting = true)
       loadProducts(false, true);
+    } else if (page === 'shop') {
+      setCurrentPage('shop');
     } else if (page === 'cart') {
       setCurrentPage('cart');
     } else if (page === 'order-tracking') {
@@ -270,6 +278,7 @@ export default function App() {
         {currentPage === 'home' && (
           <>
             {!searchQuery && !selectedCategory && <Hero />}
+            {!searchQuery && !selectedCategory && <Promotions onViewDetails={handleViewProductDetail} />}
             <CategoryNav
               categories={categories}
               selectedCategory={selectedCategory}
@@ -305,8 +314,8 @@ export default function App() {
                   <p className="text-sm text-gray-400 mb-4">
                     Vérifiez que le backend est démarré sur http://localhost:8081
                   </p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => loadProducts()}
                   >
                     Réessayer
@@ -321,7 +330,15 @@ export default function App() {
                 />
               )}
             </div>
+            {!searchQuery && !selectedCategory && <Benefits />}
+            {!searchQuery && !selectedCategory && <TrustBadges />}
+            {!searchQuery && !selectedCategory && <Testimonials />}
+            {!searchQuery && !selectedCategory && <TestimonialForm />}
           </>
+        )}
+
+        {currentPage === 'shop' && (
+          <Shop onNavigate={handleNavigate} />
         )}
 
         {currentPage === 'product-detail' && selectedProduct && (

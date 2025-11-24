@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Truck, CheckCircle, Clock, MapPin, ArrowLeft, RefreshCw, Search } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, MapPin, ArrowLeft, RefreshCw, Search, Phone, Car } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -23,6 +23,12 @@ interface TrackingInfo {
   dateLivraisonEstimee: string | null;
   dateLivraisonReelle: string | null;
   notesLivraison: string | null;
+  driver?: {
+    id: number;
+    nomComplet: string;
+    telephone: string;
+    vehicule: string;
+  } | null;
 }
 
 interface StatusHistory {
@@ -79,12 +85,17 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId: initialOr
    const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
    const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
    const [loading, setLoading] = useState(false);
+   const [refreshing, setRefreshing] = useState(false);
    const [error, setError] = useState<string | null>(null);
    const [showInputForm, setShowInputForm] = useState(!initialOrderId);
 
-  const loadTrackingData = async (id: number) => {
+  const loadTrackingData = async (id: number, isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       const [trackingResponse, historyResponse] = await Promise.all([
@@ -105,6 +116,13 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId: initialOr
       setError('Impossible de charger les informations de suivi. Veuillez vérifier le numéro de commande.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    if (orderId) {
+      loadTrackingData(orderId, true);
     }
   };
 
@@ -249,9 +267,15 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId: initialOr
 
   const currentStep = getCurrentStep();
   const currentStatusConfig = statusConfig[trackingInfo.statut as keyof typeof statusConfig];
+  const isCancelled = trackingInfo.statut === 'CANCELLED';
+  const isDelivered = trackingInfo.statut === 'DELIVERED';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className={`min-h-screen py-12 ${
+      isCancelled ? 'bg-red-50' :
+      isDelivered ? 'bg-green-50' :
+      'bg-gray-50'
+    }`}>
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -260,41 +284,89 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId: initialOr
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour
             </Button>
-            <h1 className="text-3xl mb-2">Suivi de commande</h1>
-            <p className="text-gray-600">Commande #{orderId?.toString().padStart(6, '0')}</p>
+            <h1 className={`text-3xl mb-2 ${
+              isCancelled ? 'text-red-800' :
+              isDelivered ? 'text-green-800' :
+              ''
+            }`}>Suivi de commande</h1>
+            <p className={
+              isCancelled ? 'text-red-600' :
+              isDelivered ? 'text-green-600' :
+              'text-gray-600'
+            }>Commande #{orderId?.toString().padStart(6, '0')}</p>
           </div>
 
           {/* Status Overview */}
-          <Card className="p-6 mb-6">
+          <Card className={`p-6 mb-6 ${
+            isCancelled ? 'border-red-200 bg-red-50' :
+            isDelivered ? 'border-green-200 bg-green-50' :
+            ''
+          }`}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                {currentStatusConfig && <currentStatusConfig.icon className="h-6 w-6 text-blue-600" />}
+                {currentStatusConfig && <currentStatusConfig.icon className={`h-6 w-6 ${
+                  isCancelled ? 'text-red-600' :
+                  isDelivered ? 'text-green-600' :
+                  'text-blue-600'
+                }`} />}
                 <div>
-                  <h2 className="text-xl">Statut actuel</h2>
+                  <h2 className={`text-xl ${
+                    isCancelled ? 'text-red-800' :
+                    isDelivered ? 'text-green-800' :
+                    ''
+                  }`}>Statut actuel</h2>
                   <Badge className={currentStatusConfig?.color}>
                     {currentStatusConfig?.label}
                   </Badge>
                 </div>
               </div>
-              <Button onClick={loadTrackingData} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Actualiser
+              <Button onClick={handleRefresh} variant="outline" size="sm" disabled={refreshing}>
+                {refreshing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Actualisation...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Actualiser
+                  </>
+                )}
               </Button>
             </div>
 
             {/* Progress Bar */}
-            <div className="mb-6">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>Commande</span>
-                <span>Confirmation</span>
-                <span>Préparation</span>
-                <span>Expédition</span>
-                <span>Livraison</span>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: '0.5rem',
+                fontSize: '0.875rem',
+                color: '#6b7280',
+                marginBottom: '0.5rem',
+                width: '100%'
+              }}>
+                <span style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>Commande</span>
+                <span style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>Confirmation</span>
+                <span style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>Préparation</span>
+                <span style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>Expédition</span>
+                <span style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>Livraison</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div style={{
+                width: '100%',
+                backgroundColor: '#e5e7eb',
+                borderRadius: '9999px',
+                height: '0.5rem',
+                overflow: 'hidden'
+              }}>
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${(currentStep / 5) * 100}%` }}
+                  style={{
+                    height: '0.5rem',
+                    backgroundColor: isCancelled ? '#dc2626' : isDelivered ? '#16a34a' : '#2563eb',
+                    borderRadius: '9999px',
+                    transition: 'width 0.5s ease-in-out',
+                    width: isCancelled || isDelivered ? '100%' : `${(currentStep / 5) * 100}%`
+                  }}
                 ></div>
               </div>
             </div>
@@ -311,6 +383,31 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId: initialOr
                 <p className="text-sm text-gray-500 mb-1">Transporteur</p>
                 <p>{trackingInfo.transporteur || <span className="text-gray-400">Non défini</span>}</p>
               </div>
+              {trackingInfo.driver && (
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500 mb-1">Chauffeur assigné</p>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <Truck className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-green-800">{trackingInfo.driver.nomComplet}</p>
+                        <p className="text-sm text-green-600 flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {trackingInfo.driver.telephone}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Car className="h-3 w-3" />
+                            {trackingInfo.driver.vehicule}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-gray-500 mb-1">Date d'expédition</p>
                 <p>{formatDate(trackingInfo.dateExpedition)}</p>
@@ -336,6 +433,34 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId: initialOr
               </div>
             )}
           </Card>
+
+          {isCancelled && (
+            <div className="bg-red-100 border border-red-300 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-red-200 rounded-full flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800">Commande annulée</h3>
+                  <p className="text-red-700">Cette commande a été annulée et ne sera pas traitée.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isDelivered && (
+            <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-200 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-800">Commande livrée avec succès !</h3>
+                  <p className="text-green-700">Votre commande a été livrée. Merci pour votre confiance !</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Status History */}
           <Card className="p-6">
@@ -390,7 +515,7 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId: initialOr
               </a>
               <span className="text-gray-400">|</span>
               <a href="tel:+33123456789" className="text-blue-600 hover:underline">
-                +33 1 23 45 67 89
+                +216 71 398 602
               </a>
             </div>
           </Card>

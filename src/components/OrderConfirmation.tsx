@@ -217,7 +217,7 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
               </a>
               <span className="text-gray-400">|</span>
               <a href="tel:+33123456789" className="text-blue-600 hover:underline">
-                +33 1 23 45 67 89
+                +216 71 398 602
               </a>
             </div>
           </Card>

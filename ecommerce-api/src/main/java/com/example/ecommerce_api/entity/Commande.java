@@ -49,10 +49,21 @@ public class Commande {
     @Column(nullable = true)
     private String transporteur;          // Shipping carrier (e.g., "DHL", "UPS")
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id")
+    @JsonIgnore
+    private Driver driver;                // Assigned driver
+
     @Column(nullable = true)
     private String notesLivraison;        // Delivery notes
 
-    // Order-specific delivery address (embedded to avoid relationship conflicts)
+    // Order-specific delivery address (relationship to adresses_livraison table)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "adresse_livraison_id")
+    @JsonIgnore
+    private AdresseLivraison adresseLivraison;
+
+    // Keep embedded fields for backward compatibility and display
     @Column(nullable = true)
     private String rueLivraison;
     @Column(nullable = true)
@@ -111,6 +122,12 @@ public class Commande {
 
     public String getTransporteur() { return transporteur; }
     public void setTransporteur(String transporteur) { this.transporteur = transporteur; }
+
+    public Driver getDriver() { return driver; }
+    public void setDriver(Driver driver) { this.driver = driver; }
+
+    public AdresseLivraison getAdresseLivraison() { return adresseLivraison; }
+    public void setAdresseLivraison(AdresseLivraison adresseLivraison) { this.adresseLivraison = adresseLivraison; }
 
     public String getNotesLivraison() { return notesLivraison; }
     public void setNotesLivraison(String notesLivraison) { this.notesLivraison = notesLivraison; }

@@ -3,6 +3,7 @@ import { CheckCircle, Mail, Package, Truck, Home, Download, CreditCard } from 'l
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Separator } from './ui/separator';
+import { useCart } from '../context/CartContext';
 
 interface PaymentSuccessProps {
   onReturnHome: () => void;
@@ -13,6 +14,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({
   onReturnHome,
   onViewOrderTracking,
 }) => {
+  const { clearCart } = useCart();
   const [orderId, setOrderId] = useState<number | null>(null);
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationError, setVerificationError] = useState<string | null>(null);
@@ -32,6 +34,8 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({
 
           if (data.success) {
             setOrderId(data.orderId);
+            // Clear the cart after successful payment
+            clearCart();
           } else {
             setVerificationError(data.error || 'Payment verification failed');
           }

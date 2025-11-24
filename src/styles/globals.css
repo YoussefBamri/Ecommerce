@@ -187,3 +187,38 @@
 html {
   font-size: var(--font-size);
 }
+
+/* Custom Progress Bar Styles */
+.progress-bar-container {
+  margin-bottom: 1.5rem;
+}
+
+.progress-bar-labels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.progress-bar-labels span {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.progress-bar-track {
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.5rem;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 0.5rem;
+  background-color: #2563eb;
+  border-radius: 9999px;
+  transition: width 0.5s ease-in-out;
+}

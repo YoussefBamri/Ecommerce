@@ -1,0 +1,219 @@
+/* Testimonial Form Styles */
+.testimonial-form-trigger {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.testimonial-form-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.testimonial-form-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.testimonial-form-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.testimonial-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.testimonial-form-modal {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-appear 0.3s ease-out;
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.testimonial-form-header {
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.testimonial-form-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.testimonial-form-header p {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.testimonial-form-content {
+  padding: 1.5rem 2rem 2rem;
+}
+
+.testimonial-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.testimonial-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.testimonial-form-input,
+.testimonial-form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  resize: vertical;
+}
+
+.testimonial-form-input:focus,
+.testimonial-form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.testimonial-form-stars {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.testimonial-form-star {
+  width: 2rem;
+  height: 2rem;
+  color: #d1d5db;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.testimonial-form-star.interactive:hover {
+  transform: scale(1.1);
+}
+
+.testimonial-form-star.filled {
+  color: #fbbf24;
+  fill: #fbbf24;
+}
+
+.testimonial-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.testimonial-form-cancel {
+  padding: 0.75rem 1.5rem;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.testimonial-form-cancel:hover {
+  background: #e5e7eb;
+}
+
+.testimonial-form-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.testimonial-form-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.testimonial-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.testimonial-form-submit-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (max-width: 640px) {
+  .testimonial-form-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+
+  .testimonial-form-header {
+    padding: 1.5rem 1.5rem 1rem;
+  }
+
+  .testimonial-form-content {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+
+  .testimonial-form-actions {
+    flex-direction: column;
+  }
+
+  .testimonial-form-cancel,
+  .testimonial-form-submit {
+    width: 100%;
+  }
+}

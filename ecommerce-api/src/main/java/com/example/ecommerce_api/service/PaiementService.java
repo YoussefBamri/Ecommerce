@@ -92,6 +92,10 @@ public class PaiementService {
         if ("SUCCES".equalsIgnoreCase(saved.getStatut())) {
             commande.setStatut("PAYEE");
             commandeService.save(commande);
+
+            // Envoyer l'email de confirmation de commande
+            commandeService.envoyerEmailConfirmation(commande);
+            System.out.println("PaiementService: Order confirmation email sent for order ID: " + commande.getId());
         }
 
         return saved;

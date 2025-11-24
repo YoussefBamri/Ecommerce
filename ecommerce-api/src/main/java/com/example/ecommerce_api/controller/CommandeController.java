@@ -2,6 +2,7 @@ package com.example.ecommerce_api.controller;
 
 import com.example.ecommerce_api.entity.Client;
 import com.example.ecommerce_api.entity.Commande;
+import com.example.ecommerce_api.entity.Driver;
 import com.example.ecommerce_api.entity.HistoriqueStatut;
 import com.example.ecommerce_api.entity.LigneCommande;
 import com.example.ecommerce_api.service.ClientService;
@@ -29,11 +30,13 @@ public class CommandeController {
         public LocalDateTime dateLivraisonReelle;
         public String transporteur;
         public String notesLivraison;
+        public Long adresseLivraisonId;
         public String rueLivraison;
         public String villeLivraison;
         public String codePostalLivraison;
         public String paysLivraison;
         public ClientInfo client;
+        public DriverInfo driver;
 
         public OrderDTO(Commande commande) {
             this.id = commande.getId();
@@ -46,14 +49,31 @@ public class CommandeController {
             this.dateLivraisonReelle = commande.getDateLivraisonReelle();
             this.transporteur = commande.getTransporteur();
             this.notesLivraison = commande.getNotesLivraison();
-            this.rueLivraison = commande.getRueLivraison();
-            this.villeLivraison = commande.getVilleLivraison();
-            this.codePostalLivraison = commande.getCodePostalLivraison();
-            this.paysLivraison = commande.getPaysLivraison();
+
+            // Set address information
+            if (commande.getAdresseLivraison() != null) {
+                this.adresseLivraisonId = commande.getAdresseLivraison().getId();
+                this.rueLivraison = commande.getAdresseLivraison().getRue();
+                this.villeLivraison = commande.getAdresseLivraison().getVille();
+                this.codePostalLivraison = commande.getAdresseLivraison().getCodePostal();
+                this.paysLivraison = commande.getAdresseLivraison().getPays();
+            } else {
+                // Fallback to embedded fields for backward compatibility
+                this.adresseLivraisonId = null;
+                this.rueLivraison = commande.getRueLivraison();
+                this.villeLivraison = commande.getVilleLivraison();
+                this.codePostalLivraison = commande.getCodePostalLivraison();
+                this.paysLivraison = commande.getPaysLivraison();
+            }
 
             // Include basic client info
             if (commande.getClient() != null) {
                 this.client = new ClientInfo(commande.getClient());
+            }
+
+            // Include driver info
+            if (commande.getDriver() != null) {
+                this.driver = new DriverInfo(commande.getDriver());
             }
         }
     }
@@ -67,6 +87,22 @@ public class CommandeController {
             this.id = client.getId();
             this.nom = client.getNom();
             this.email = client.getEmail();
+        }
+    }
+
+    public static class DriverInfo {
+        public Long id;
+        public String nomComplet;
+        public String telephone;
+        public String vehicule;
+
+        public DriverInfo(Driver driver) {
+            if (driver != null) {
+                this.id = driver.getId();
+                this.nomComplet = driver.getNomComplet();
+                this.telephone = driver.getTelephone();
+                this.vehicule = driver.getVehicule();
+            }
         }
     }
 
@@ -178,6 +214,16 @@ public class CommandeController {
         tracking.put("dateLivraisonReelle", commande.getDateLivraisonReelle());
         tracking.put("notesLivraison", commande.getNotesLivraison());
 
+        // Include driver information if assigned
+        if (commande.getDriver() != null) {
+            Map<String, Object> driverInfo = new HashMap<>();
+            driverInfo.put("id", commande.getDriver().getId());
+            driverInfo.put("nomComplet", commande.getDriver().getNomComplet());
+            driverInfo.put("telephone", commande.getDriver().getTelephone());
+            driverInfo.put("vehicule", commande.getDriver().getVehicule());
+            tracking.put("driver", driverInfo);
+        }
+
         return tracking;
     }
 
@@ -185,21 +231,24 @@ public class CommandeController {
      * Met à jour le statut d'une commande (admin)
      */
     @PutMapping("/{id}/status")
-    public Commande updateStatus(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+    public OrderDTO updateStatus(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
         String nouveauStatut = (String) payload.get("statut");
         String commentaire = (String) payload.get("commentaire");
         String utilisateur = (String) payload.get("utilisateur");
 
-        return commandeService.mettreAJourStatut(id, nouveauStatut, commentaire, utilisateur);
+        Commande commande = commandeService.mettreAJourStatut(id, nouveauStatut, commentaire, utilisateur);
+        return new OrderDTO(commandeService.getCommandeWithDriver(commande.getId()));
     }
 
     /**
      * Marque une commande comme expédiée
      */
     @PostMapping("/{id}/ship")
-    public Commande shipOrder(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+    public OrderDTO shipOrder(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
         String numeroSuivi = (String) payload.get("numeroSuivi");
         String transporteur = (String) payload.get("transporteur");
+        String notesLivraison = (String) payload.get("notesLivraison");
+        Long driverId = payload.containsKey("driverId") ? Long.valueOf(payload.get("driverId").toString()) : null;
         String utilisateur = (String) payload.get("utilisateur");
 
         // Date d'expédition par défaut : maintenant
@@ -209,7 +258,8 @@ public class CommandeController {
             dateExpedition = LocalDateTime.parse((String) payload.get("dateExpedition"));
         }
 
-        return commandeService.expedierCommande(id, numeroSuivi, transporteur, dateExpedition, utilisateur);
+        Commande commande = commandeService.expedierCommande(id, numeroSuivi, transporteur, notesLivraison, dateExpedition, driverId, utilisateur);
+        return new OrderDTO(commandeService.getCommandeWithDriver(commande.getId()));
     }
 
     /**
@@ -224,7 +274,7 @@ public class CommandeController {
      * Marque une commande comme livrée
      */
     @PutMapping("/{id}/deliver")
-    public Commande markAsDelivered(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+    public OrderDTO markAsDelivered(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
         String utilisateur = (String) payload.get("utilisateur");
 
         // Date de livraison par défaut : maintenant
@@ -233,17 +283,19 @@ public class CommandeController {
             dateLivraison = LocalDateTime.parse((String) payload.get("dateLivraison"));
         }
 
-        return commandeService.marquerLivree(id, dateLivraison, utilisateur);
+        Commande commande = commandeService.marquerLivree(id, dateLivraison, utilisateur);
+        return new OrderDTO(commandeService.getCommandeWithDriver(commande.getId()));
     }
 
     /**
      * Annule une commande
      */
     @PostMapping("/{id}/cancel")
-    public Commande cancelOrder(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+    public OrderDTO cancelOrder(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
         String raison = (String) payload.get("raison");
         String utilisateur = (String) payload.get("utilisateur");
 
-        return commandeService.annulerCommande(id, raison, utilisateur);
+        Commande commande = commandeService.annulerCommande(id, raison, utilisateur);
+        return new OrderDTO(commandeService.getCommandeWithDriver(commande.getId()));
     }
 }

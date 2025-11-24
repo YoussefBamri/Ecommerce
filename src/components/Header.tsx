@@ -57,6 +57,12 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage , onView
                 Accueil
               </Button>
               <Button
+                variant={currentPage === 'shop' ? 'default' : 'ghost'}
+                onClick={() => onNavigate('shop')}
+              >
+                Boutique
+              </Button>
+              <Button
                 variant={currentPage === 'order-tracking' ? 'default' : 'ghost'}
                 onClick={() => onNavigate('order-tracking')}
                 className="gap-2"
@@ -288,6 +294,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage , onView
                 }}
               >
                 Accueil
+              </Button>
+              <Button
+                variant={currentPage === 'shop' ? 'default' : 'ghost'}
+                className="justify-start"
+                onClick={() => {
+                  onNavigate('shop');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Boutique
               </Button>
               <Button
                 variant={currentPage === 'order-tracking' ? 'default' : 'ghost'}

@@ -168,10 +168,13 @@ public class PaiementController {
                  Paiement savedPaiement = paiementRepository.save(paiement);
                  System.out.println("PaiementController: Payment saved with ID: " + savedPaiement.getIdTransaction());
 
-                 // Mettre à jour le statut de la commande
-                 commande.setStatut("PAYEE");
-                 commandeService.save(commande);
-                 System.out.println("PaiementController: Order status updated to PAYEE for order ID: " + orderId);
+                 // Mettre à jour le statut de la commande à CONFIRMED avec historique
+                 commandeService.mettreAJourStatut(orderId, "CONFIRMED", "Paiement confirmé via Stripe", "Système");
+                 System.out.println("PaiementController: Order status updated to CONFIRMED for order ID: " + orderId);
+
+                 // Envoyer l'email de confirmation de commande
+                 commandeService.envoyerEmailConfirmation(commande);
+                 System.out.println("PaiementController: Order confirmation email sent for order ID: " + orderId);
 
                  // Retourner les informations de succès
                  Map<String, Object> response = new HashMap<>();

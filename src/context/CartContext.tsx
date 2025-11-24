@@ -15,17 +15,10 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    // Vider le panier au démarrage pour supprimer les produits statiques
-    // Ceci est une migration unique pour nettoyer les anciens produits statiques
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
       try {
-        const parsed = JSON.parse(savedCart);
-        // Vérifier si c'est une ancienne version avec produits statiques
-        // On vide le panier pour repartir à zéro avec les produits dynamiques
-        console.log('🧹 Nettoyage du panier - suppression des produits statiques');
-        localStorage.removeItem('cart');
-        return [];
+        return JSON.parse(savedCart);
       } catch {
         return [];
       }
